@@ -36,15 +36,24 @@ function showError(message) {
   ui.error.hidden = false;
 }
 
-function addTranscript(data) {
+function addTranscript(data, current) {
   // textContent evita interpretar a fala como HTML ou código.
   const nearBottom = ui.captions.scrollHeight - ui.captions.scrollTop - ui.captions.clientHeight < 100;
-  if (data.text?.trim()) {
+  if (typeof data.text === "string") {
+    // A STT.ai devolve o texto acumulado da sessão, incluindo revisões.
+    // Substituímos apenas esta sessão; frases de sessões anteriores permanecem.
     const text = data.text.trim();
-    paragraphs.push(text);
-    const line = document.createElement("p");
-    line.textContent = text;
-    ui.transcript.append(line);
+    if (text && !current.line) {
+      current.line = document.createElement("p");
+      ui.transcript.append(current.line);
+    }
+    if (current.line && current.line.textContent !== text) current.line.textContent = text;
+    paragraphs = [...current.previousParagraphs, ...(text ? [text] : [])];
+    // Uma revisão vazia também pode retirar um reconhecimento incorreto.
+    if (!text && current.line) {
+      current.line.remove();
+      current.line = null;
+    }
     ui.partial.textContent = "";
   }
   if (typeof data.partial === "string") ui.partial.textContent = data.partial.trim();
@@ -82,7 +91,7 @@ function finish(current, error = "") {
 async function startConversation() {
   if (session || !configured) return;
   ui.error.hidden = true;
-  const current = {};
+  const current = { previousParagraphs: [...paragraphs], line: null };
   session = current;
   setState("connecting", "Preparando microfone");
   try {
@@ -131,7 +140,7 @@ async function startConversation() {
         current.processor.connect(current.context.destination);
         setState("listening", "Ouvindo agora");
       } else if (event.type === "transcript") {
-        addTranscript(event);
+        addTranscript(event, current);
       } else if (event.type === "done") {
         finish(current);
       } else if (event.type === "error") {

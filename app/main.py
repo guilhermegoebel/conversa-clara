@@ -59,7 +59,7 @@ async def forward_audio(browser, provider):
 
 
 async def forward_text(browser, provider):
-    """Filtra mensagens externas; somente texto e estados chegam à interface."""
+    """Encaminha o texto acumulado; cada resposta pode revisar a anterior."""
     while True:
         raw = await asyncio.wait_for(provider.recv(), timeout=90)
         data = json.loads(raw)
@@ -68,7 +68,9 @@ async def forward_text(browser, provider):
         message = {"type": "transcript"}
         for key in ("text", "partial"):
             if isinstance(data.get(key), str):
-                message[key] = data[key][:20000]
+                # O limite total da mensagem já é aplicado na conexão externa.
+                # Cortar a string aqui perderia o final de conversas mais longas.
+                message[key] = data[key]
         if len(message) > 1:
             await browser.send_json(message)
         if data.get("is_final") is True:

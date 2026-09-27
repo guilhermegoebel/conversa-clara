@@ -7,7 +7,7 @@ O servidor roda no seu computador. **É necessário acesso à internet:** o áud
 ## Funcionalidades
 
 - Iniciar e parar a captura do microfone.
-- Exibir trechos provisórios e frases confirmadas durante a conversa.
+- Exibir legendas durante a conversa, atualizando o texto quando o serviço revisa o reconhecimento.
 - Escolher entre três tamanhos de legenda.
 - Salvar o texto confirmado e limpar a conversa com confirmação.
 - Usar teclado, tela pequena e ampliação do navegador.
@@ -174,10 +174,10 @@ A interface usa HTML semântico, nomes acessíveis, estados em texto, foco visí
 .\.venv\Scripts\python.exe -m pytest -q
 ```
 
-Se tiver Node.js 18 ou superior, execute também o teste da conversão de áudio:
+Se tiver Node.js 18 ou superior, execute também os testes de conversão de áudio e de atualização das legendas:
 
 ```powershell
-node --test tests/test_audio.cjs
+node --test tests/test_audio.cjs tests/test_transcript.cjs
 ```
 
 Os testes Python simulam a STT.ai. Eles não comprovam que a chave tem acesso ao streaming nem avaliam a qualidade do reconhecimento real.
@@ -194,6 +194,8 @@ Os testes Python simulam a STT.ai. Eles não comprovam que a chave tem acesso ao
 | Página inacessível pelo Wi-Fi | Confira IP, porta, firewall, ALLOWED_HOSTS, certificado e se ambos os dispositivos estão na mesma rede. |
 | “Invalid host header” | Acrescente o IP usado em ALLOWED_HOSTS e reinicie. Não use `*` para contornar a proteção. |
 | Porta 8000 ocupada | Pare o outro servidor ou escolha outra porta e ajuste os endereços e encaminhamentos. |
+
+As respostas do serviço representam o texto acumulado da sessão. A aplicação substitui a versão anterior, em vez de acrescentá-la novamente; ao iniciar outra conversa, mantém o texto das sessões anteriores. Versões iniciais podem conter palavras em outro idioma antes das correções, mesmo com português configurado.
 
 O processamento tem atraso variável, depende da conexão e do fornecedor e pode errar palavras ou gerar texto incorreto. Não há identificação de falantes. O áudio deve ser mono e o navegador precisa aceitar um contexto de áudio a 16 kHz. A captura encerra ao sair da página, mudar de aplicativo ou ocultar a aba; o texto confirmado permanece enquanto a página estiver aberta. Sessões têm limite de 30 minutos no servidor e podem terminar antes por inatividade do serviço. Você pode iniciar novamente sem apagar o texto.
 

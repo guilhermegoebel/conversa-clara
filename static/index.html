@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Legendas grandes para acompanhar conversas presenciais em português.">
+  <title>Conversa Clara — legendas para conversas</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/styles.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Ir para as legendas</a>
+  <div class="page">
+    <header class="header">
+      <a class="brand" href="/" aria-label="Conversa Clara, início"><span class="brand-mark" aria-hidden="true">cc</span>Conversa Clara</a>
+      <span class="language">Português · Brasil</span>
+    </header>
+    <main id="main" tabindex="-1">
+      <div class="intro"><p class="eyebrow">CADA PALAVRA MAIS PERTO</p><h1>Acompanhe a conversa.</h1><p>O que é falado aparece aqui, em letras grandes.</p></div>
+      <section class="workspace" aria-labelledby="caption-title">
+        <div class="workspace-header">
+          <h2 id="caption-title">Legendas</h2>
+          <p id="status" class="status" role="status"><span class="dot" aria-hidden="true"></span><span id="status-text">Pronto para começar</span></p>
+        </div>
+        <!-- Resultados parciais ficam fora da região anunciada para evitar repetições. -->
+        <div id="captions" class="captions" tabindex="0" role="region" aria-label="Área de leitura das legendas">
+          <div id="empty" class="empty"><span class="quote-mark" aria-hidden="true">“</span><p>Uma conversa,<br>palavra por palavra.</p><span>Toque em iniciar e fale perto do microfone.</span></div>
+          <div id="transcript" role="log" aria-label="Transcrição confirmada" aria-live="polite" aria-relevant="additions" aria-atomic="false"></div>
+          <p id="partial" class="partial" aria-label="Trecho provisório" hidden></p>
+        </div>
+        <div class="reading-controls">
+          <label for="text-size">Tamanho da legenda</label>
+          <select id="text-size"><option value="large">Grande</option><option value="extra">Muito grande</option><option value="medium">Médio</option></select>
+        </div>
+      </section>
+      <p id="error" class="error" role="alert" hidden></p>
+      <div class="actions">
+        <button id="toggle" class="primary" type="button"><span id="toggle-icon" aria-hidden="true">●</span><span id="toggle-label">Iniciar conversa</span></button>
+        <div class="secondary-actions"><button id="save" type="button" disabled>Salvar texto</button><button id="clear" class="quiet" type="button" disabled>Limpar</button></div>
+      </div>
+      <p id="hint" class="hint">Você decide quando começar e parar.</p>
+      <aside class="privacy" aria-label="Sobre a transcrição"><p>Ao iniciar, você permite enviar o áudio à STT.ai para gerar as legendas. Avise as pessoas antes de começar.</p><p>O texto fica nesta página até você limpar ou sair. Salve o que quiser guardar. As legendas automáticas podem conter erros.</p></aside>
+    </main>
+    <footer><span>Feito para acompanhar, no seu ritmo.</span><span>MVP · Tecnologias Assistivas</span></footer>
+  </div>
+  <dialog id="clear-dialog" aria-labelledby="clear-title" aria-describedby="clear-description">
+    <h2 id="clear-title">Limpar a conversa?</h2><p id="clear-description">O texto será apagado desta página. Salve antes se quiser guardá-lo.</p>
+    <form method="dialog"><button value="cancel" autofocus>Cancelar</button><button value="confirm" class="primary">Sim, limpar</button></form>
+  </dialog>
+  <noscript>Ative o JavaScript do navegador para usar a transcrição.</noscript>
+</body>
+</html>

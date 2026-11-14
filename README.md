@@ -8,7 +8,11 @@ O servidor roda no seu computador. **É necessário acesso à internet:** o áud
 
 - Iniciar e parar a captura do microfone.
 - Exibir legendas durante a conversa, atualizando o texto quando o serviço revisa o reconhecimento.
-- Escolher entre três tamanhos de legenda.
+- Escolher entre quatro tamanhos de legenda e dois espaçamentos.
+- Alternar entre temas claro, escuro e de alto contraste; salvar preferências neste navegador.
+- Ampliar a área de leitura, controlar a rolagem e os anúncios ao leitor de tela.
+- Experimentar uma demonstração identificada, sem microfone, internet ou créditos (com o servidor local já iniciado).
+- Revisar palavras após encerrar, copiar e salvar a transcrição, inclusive salvar durante a captura.
 - Salvar o texto confirmado e limpar a conversa com confirmação.
 - Usar teclado, tela pequena e ampliação do navegador.
 
@@ -22,14 +26,18 @@ Python 3.11 ou superior, FastAPI, Uvicorn e WebSocket no servidor; HTML, CSS, Ja
 conversa-clara/
 ├── app/
 │   ├── __init__.py
-│   └── main.py             # Página, configuração e conexão com a STT.ai
+│   ├── main.py             # Página, configuração e conexão com a STT.ai
+│   └── transcription.py    # Seleção de revisões e resultados finais
 ├── static/
 │   ├── index.html          # Estrutura acessível da página
 │   ├── styles.css          # Aparência e responsividade
 │   ├── app.js              # Microfone, legendas e controles
+│   ├── transcript.js       # Estado das sessões e revisões de texto
 │   ├── pcm-processor.js    # Conversão do áudio para PCM
 │   └── favicon.svg
-├── tests/                  # Testes com provedor simulado
+├── tests/                  # Testes de servidor, áudio, interface e acessibilidade
+├── docs/                   # Requisitos, arquitetura, acessibilidade e resultados
+├── package.json            # Dependência opcional axe-core para testes
 ├── .env.example
 ├── .gitignore
 ├── requirements.txt
@@ -43,7 +51,7 @@ Fluxo: microfone → navegador (PCM mono, 16 kHz, 16 bits) → servidor Python �
 
 - Python 3.11 ou superior.
 - Microfone conectado e autorizado no navegador.
-- Navegador atualizado com suporte a AudioWorklet e áudio a 16 kHz.
+- Navegador atualizado com suporte a AudioWorklet. A captura usa a taxa nativa e o aplicativo converte para 16 kHz.
 - Conexão com a internet e uma chave própria da STT.ai com acesso ao streaming e créditos disponíveis.
 
 ## Obter o projeto
@@ -150,7 +158,33 @@ ALLOWED_HOSTS=localhost,127.0.0.1,[::1],192.168.1.10
 7. Se o Windows perguntar, permita acesso do Python **apenas na rede privada**. No celular conectado ao mesmo Wi-Fi, abra `https://192.168.1.10:8000`. O certificado deve ser reconhecido sem aviso. Se o IP mudar, gere outro certificado e ajuste `.env`.
 8. Ao terminar, desligue o servidor. Remova do celular a autoridade de teste se não for mais usá-la.
 
-Este MVP não possui autenticação de usuários. Quem alcançar o servidor na rede permitida pode iniciar transcrições usando seus créditos. Use uma sessão por vez e não encaminhe a porta do roteador para a internet.
+Esta aplicação local não possui autenticação de usuários. Quem alcançar o servidor na rede permitida pode iniciar transcrições usando seus créditos. Use uma sessão por vez e não encaminhe a porta do roteador para a internet.
+
+## Exibição das legendas
++
++O padrão é priorizar texto revisado: as tentativas iniciais não aparecem na tela, no leitor de tela nem nos arquivos salvos. O serviço pode demorar mais para fornecer uma revisão. Se ele não identificar a origem da resposta, o texto aparece somente ao parar a conversa e receber `is_final: true`.
++
++Para mostrar **somente o resultado final ao parar**, acrescente ao seu `.env`:
++
++```dotenv
++STT_DISPLAY_MODE=final
++```
++
++Reinicie o servidor depois de alterar a configuração. Para voltar ao padrão, use `STT_DISPLAY_MODE=reviewed` ou remova essa linha. Nesse protocolo, `is_final` encerra a sessão; não indica o fim de cada frase.
++
++Se a resposta final vier apenas do reconhecedor inicial Vosk, o aplicativo mostra um aviso. Se já houver uma revisão Whisper, preserva essa revisão em vez de substituí-la por uma hipótese inicial tardia. Se não houver revisão, aceita o texto final disponível com aviso para conferência. Não há tentativa de detectar e apagar palavras estrangeiras por dicionário: isso poderia remover nomes próprios ou fala legítima. Nenhum filtro garante que o resultado revisado do fornecedor seja sempre correto ou exclusivamente em português.
++
++## Recursos de acessibilidade
+
+Abra **Ajustar leitura e acessibilidade** para escolher contraste, tamanho e espaçamento das legendas, rolagem automática e anúncios ao leitor de tela. As preferências persistem no navegador; a conversa não é armazenada no `localStorage`.
+
+**Ampliar área de leitura** reduz elementos de apresentação e aumenta o espaço das legendas. O botão de parar continua disponível. Escape sai desse modo quando não há diálogo aberto. **Ir à última legenda** volta ao fim sem impedir a leitura de trechos anteriores.
+
+Use **Revisar texto** após parar para corrigir palavras reconhecidas incorretamente. Copiar e salvar usam a versão atual do texto, sem trechos provisórios. Se salvar durante a captura, novas falas posteriores não entram naquele arquivo: salve novamente ao terminar.
+
+A demonstração usa texto fictício identificado. Limpe o exemplo antes de iniciar uma conversa real. Não é necessário configurar a chave para experimentar a demonstração.
+
+Tab/Shift+Tab percorrem controles; Enter/Espaço ativam botões; setas alteram seleções e rolam a área de leitura; Escape fecha diálogos. Os anúncios de legendas são agrupados para evitar uma leitura a cada bloco de áudio e podem ser desativados. O comportamento com leitores de tela reais ainda precisa de avaliação manual.
 
 ## Teste funcional e de acessibilidade
 
@@ -180,6 +214,21 @@ Se tiver Node.js 18 ou superior, execute também os testes de conversão de áud
 node --test tests/test_audio.cjs tests/test_transcript.cjs
 ```
 
+Para testar a interface com Playwright e axe-core, instale as dependências **opcionais de desenvolvimento**:
+
+```powershell
+npm install
+.\.venv\Scripts\python.exe -m playwright install chromium
+```
+
+Com o servidor já aberto em outro terminal:
+
+```powershell
+.\.venv\Scripts\python.exe tests/browser_checks.py --url http://localhost:8000
+```
+
+O relatório JSON e as capturas são gravados em `test-results/` (ignorado pelo Git). No Windows com Edge instalado, também é possível passar `--channel msedge` sem baixar o Chromium. O teste usa um microfone sintético e intercepta o WebSocket, sem enviar áudio ao fornecedor. Ele modifica a área de transferência com uma frase fictícia durante a verificação de cópia.
+
 Os testes Python simulam a STT.ai. Eles não comprovam que a chave tem acesso ao streaming nem avaliam a qualidade do reconhecimento real.
 
 ## Limitações e problemas comuns
@@ -195,9 +244,16 @@ Os testes Python simulam a STT.ai. Eles não comprovam que a chave tem acesso ao
 | “Invalid host header” | Acrescente o IP usado em ALLOWED_HOSTS e reinicie. Não use `*` para contornar a proteção. |
 | Porta 8000 ocupada | Pare o outro servidor ou escolha outra porta e ajuste os endereços e encaminhamentos. |
 
-As respostas do serviço representam o texto acumulado da sessão. A aplicação substitui a versão anterior, em vez de acrescentá-la novamente; ao iniciar outra conversa, mantém o texto das sessões anteriores. Versões iniciais podem conter palavras em outro idioma antes das correções, mesmo com português configurado.
+As respostas do serviço representam o texto acumulado da sessão. A aplicação substitui a versão anterior, em vez de acrescentá-la novamente; ao iniciar outra conversa, mantém o texto das sessões anteriores. O idioma enviado à STT.ai é `pt`. Hipóteses `partial` e resultados intermediários Vosk ficam ocultos. Por padrão, a aplicação mostra snapshots identificados como `source: whisper` ou a resposta final da sessão. Essas revisões ainda podem conter erros do fornecedor.
 
-O processamento tem atraso variável, depende da conexão e do fornecedor e pode errar palavras ou gerar texto incorreto. Não há identificação de falantes. O áudio deve ser mono e o navegador precisa aceitar um contexto de áudio a 16 kHz. A captura encerra ao sair da página, mudar de aplicativo ou ocultar a aba; o texto confirmado permanece enquanto a página estiver aberta. Sessões têm limite de 30 minutos no servidor e podem terminar antes por inatividade do serviço. Você pode iniciar novamente sem apagar o texto.
+O processamento tem atraso variável, depende da conexão e do fornecedor e pode errar palavras ou gerar texto incorreto. Não há identificação de falantes. O AudioWorklet converte a captura mono da taxa nativa para PCM a 16 kHz. Foram testadas taxas de 16, 44,1 e 48 kHz. A captura encerra ao sair da página, mudar de aplicativo ou ocultar a aba; o texto confirmado permanece enquanto a página estiver aberta. Sessões têm limite de 30 minutos no servidor e podem terminar antes por inatividade do serviço. Você pode iniciar novamente sem apagar o texto.
+
+## Documentação técnica
+
+- [Requisitos e critérios de aceitação](docs/REQUISITOS.md).
+- [Arquitetura e fluxo de dados](docs/ARQUITETURA.md).
+- [Matriz de acessibilidade e verificação manual](docs/ACESSIBILIDADE.md).
+- [Resultado da validação executada](docs/VALIDACAO.md).
 
 ## Referências técnicas
 

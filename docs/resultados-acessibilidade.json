@@ -1,0 +1,72 @@
+{
+  "engine": "axe-core",
+  "scans": [
+    {
+      "state": "preferences-light",
+      "version": "4.14.0",
+      "violations": [],
+      "incomplete": [],
+      "passes": 25
+    },
+    {
+      "state": "preferences-dark",
+      "version": "4.14.0",
+      "violations": [],
+      "incomplete": [],
+      "passes": 25
+    },
+    {
+      "state": "preferences-contrast",
+      "version": "4.14.0",
+      "violations": [],
+      "incomplete": [],
+      "passes": 25
+    },
+    {
+      "state": "demo-complete",
+      "version": "4.14.0",
+      "violations": [],
+      "incomplete": [],
+      "passes": 22
+    },
+    {
+      "state": "edit-dialog",
+      "version": "4.14.0",
+      "violations": [],
+      "incomplete": [],
+      "passes": 15
+    },
+    {
+      "state": "clear-dialog",
+      "version": "4.14.0",
+      "violations": [],
+      "incomplete": [],
+      "passes": 13
+    },
+    {
+      "state": "system-forced-colors",
+      "version": "4.14.0",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 1
+        }
+      ],
+      "passes": 23
+    }
+  ],
+  "functional": [
+    "Preferências persistem e podem ser restauradas; conversa não é persistida.",
+    "Demonstração, edição, cópia e download com acentos.",
+    "Teclado em diálogos e leitura ampliada; larguras 320–1280, texto a 200% e cores forçadas.",
+    "Captura sintética via AudioWorklet real, PCM, finalização e sessões acumuladas sem duplicação de revisões.",
+    "Permissão negada e cancelamento de uma permissão pendente liberam o microfone."
+  ],
+  "limitations": [
+    "Microfone simulado; STT.ai interceptada.",
+    "NVDA, TalkBack e celulares físicos não avaliados."
+  ],
+  "console_errors": [],
+  "passed": true
+}

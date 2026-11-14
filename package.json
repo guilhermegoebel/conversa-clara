@@ -1,0 +1,6 @@
+{
+  "name": "conversa-clara-tests",
+  "private": true,
+  "scripts": { "test": "node --test tests/test_audio.cjs tests/test_transcript.cjs" },
+  "devDependencies": { "axe-core": "4.14.0" }
+}

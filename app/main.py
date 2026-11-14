@@ -14,6 +14,8 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from websockets.asyncio.client import connect
 from websockets.exceptions import ConnectionClosed, InvalidStatus, WebSocketException
 
+from app.transcription import TranscriptFilter
+
 ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(ROOT / ".env")
 STATIC = ROOT / "static"
@@ -24,9 +26,21 @@ FINAL_TIMEOUT = 20
 app = FastAPI(title="Conversa Clara", docs_url=None, redoc_url=None, openapi_url=None)
 app.add_middleware(
     TrustedHostMiddleware,
-    allowed_hosts=os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1,[::1]").split(","),
+    allowed_hosts=[host.strip() for host in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1,[::1]").split(",") if host.strip()],
 )
 app.mount("/static", StaticFiles(directory=STATIC), name="static")
+
+
+@app.middleware("http")
+async def response_headers(request, call_next):
+    # Evita executar uma versão antiga do JavaScript após atualizar o projeto.
+    response = await call_next(request)
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Permissions-Policy"] = "microphone=(self), camera=()"
+    return response
 
 
 @app.get("/")
@@ -59,22 +73,17 @@ async def forward_audio(browser, provider):
 
 
 async def forward_text(browser, provider):
-    """Encaminha o texto acumulado; cada resposta pode revisar a anterior."""
+    """Encaminha revisões ou o resultado final; não expõe hipóteses iniciais."""
+    mode = os.getenv("STT_DISPLAY_MODE", "reviewed").strip().lower()
+    selector = TranscriptFilter(mode if mode in {"reviewed", "final"} else "reviewed")
     while True:
         raw = await asyncio.wait_for(provider.recv(), timeout=90)
         data = json.loads(raw)
         if not isinstance(data, dict) or data.get("error"):
             raise ValueError("Resposta inválida do serviço")
-        message = {"type": "transcript"}
-        for key in ("text", "partial"):
-            if isinstance(data.get(key), str):
-                # O limite total da mensagem já é aplicado na conexão externa.
-                # Cortar a string aqui perderia o final de conversas mais longas.
-                message[key] = data[key]
-        if len(message) > 1:
+        for message in selector.select(data):
             await browser.send_json(message)
         if data.get("is_final") is True:
-            await browser.send_json({"type": "done"})
             return
 
 

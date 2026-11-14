@@ -86,9 +86,9 @@ def test_pcm_and_final_caption_before_close(client, monkeypatch):
     with client.websocket_connect("ws://localhost/ws/transcribe", headers={"origin": "http://localhost"}) as ws:
         assert ws.receive_json() == {"type": "ready"}
         ws.send_bytes(b"\x01\x00" * 128)
-        assert ws.receive_json() == {"type": "transcript", "partial": "Olá"}
+        assert ws.receive_json() == {"type": "recognizing"}
         ws.send_text('{"action":"stop"}')
-        assert ws.receive_json() == {"type": "transcript", "text": "Olá, tudo bem?"}
+        assert ws.receive_json() == {"type": "transcript", "text": "Olá, tudo bem?", "partial": ""}
         assert ws.receive_json() == {"type": "done"}
     assert provider.audio == [b"\x01\x00" * 128]
     assert provider.closed
@@ -126,3 +126,26 @@ def test_stop_timeout_preserves_explicit_error(client, monkeypatch):
         ws.send_text('{"action":"stop"}')
         assert ws.receive_json()["type"] == "error"
     assert provider.closed
+
+
+def test_mixed_language_drafts_do_not_reach_browser(client, monkeypatch):
+    provider, _ = install_provider(monkeypatch)
+    monkeypatch.setenv("STT_DISPLAY_MODE", "reviewed")
+    for data in [
+        {"source": "vosk", "text": "Bom dia the to debate"},
+        {"source": "whisper", "text": "Bom dia.", "partial": "over so"},
+        {"source": "vosk", "text": "Bom dia the to debate over so"},
+        {"source": "whisper", "text": "Bom dia, tudo bem?", "is_final": True},
+    ]:
+        provider.events.put_nowait(json.dumps(data))
+    with client.websocket_connect("ws://localhost/ws/transcribe", headers={"origin": "http://localhost"}) as ws:
+        assert ws.receive_json() == {"type": "ready"}
+        messages = []
+        while True:
+            message = ws.receive_json()
+            messages.append(message)
+            if message["type"] == "done":
+                break
+    assert [message["text"] for message in messages if message["type"] == "transcript"] == ["Bom dia.", "Bom dia, tudo bem?"]
+    assert "debate" not in json.dumps(messages)
+    assert "over so" not in json.dumps(messages)

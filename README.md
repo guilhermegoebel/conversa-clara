@@ -161,20 +161,20 @@ ALLOWED_HOSTS=localhost,127.0.0.1,[::1],192.168.1.10
 Esta aplicação local não possui autenticação de usuários. Quem alcançar o servidor na rede permitida pode iniciar transcrições usando seus créditos. Use uma sessão por vez e não encaminhe a porta do roteador para a internet.
 
 ## Exibição das legendas
-+
-+O padrão é priorizar texto revisado: as tentativas iniciais não aparecem na tela, no leitor de tela nem nos arquivos salvos. O serviço pode demorar mais para fornecer uma revisão. Se ele não identificar a origem da resposta, o texto aparece somente ao parar a conversa e receber `is_final: true`.
-+
-+Para mostrar **somente o resultado final ao parar**, acrescente ao seu `.env`:
-+
-+```dotenv
-+STT_DISPLAY_MODE=final
-+```
-+
-+Reinicie o servidor depois de alterar a configuração. Para voltar ao padrão, use `STT_DISPLAY_MODE=reviewed` ou remova essa linha. Nesse protocolo, `is_final` encerra a sessão; não indica o fim de cada frase.
-+
-+Se a resposta final vier apenas do reconhecedor inicial Vosk, o aplicativo mostra um aviso. Se já houver uma revisão Whisper, preserva essa revisão em vez de substituí-la por uma hipótese inicial tardia. Se não houver revisão, aceita o texto final disponível com aviso para conferência. Não há tentativa de detectar e apagar palavras estrangeiras por dicionário: isso poderia remover nomes próprios ou fala legítima. Nenhum filtro garante que o resultado revisado do fornecedor seja sempre correto ou exclusivamente em português.
-+
-+## Recursos de acessibilidade
+
+O padrão é priorizar texto revisado: as tentativas iniciais não aparecem na tela, no leitor de tela nem nos arquivos salvos. O serviço pode demorar mais para fornecer uma revisão. Se ele não identificar a origem da resposta, o texto aparece somente ao parar a conversa e receber `is_final: true`.
+
+Para mostrar **somente o resultado final ao parar**, acrescente ao seu `.env`:
+
+```dotenv
+STT_DISPLAY_MODE=final
+```
+
+Reinicie o servidor depois de alterar a configuração. Para voltar ao padrão, use `STT_DISPLAY_MODE=reviewed` ou remova essa linha. Nesse protocolo, `is_final` encerra a sessão; não indica o fim de cada frase.
+
+Se a resposta final vier apenas do reconhecedor inicial Vosk, o aplicativo mostra um aviso. Se já houver uma revisão Whisper, preserva essa revisão em vez de substituí-la por uma hipótese inicial tardia. Se não houver revisão, aceita o texto final disponível com aviso para conferência. Não há tentativa de detectar e apagar palavras estrangeiras por dicionário: isso poderia remover nomes próprios ou fala legítima. Nenhum filtro garante que o resultado revisado do fornecedor seja sempre correto ou exclusivamente em português.
+
+## Recursos de acessibilidade
 
 Abra **Ajustar leitura e acessibilidade** para escolher contraste, tamanho e espaçamento das legendas, rolagem automática e anúncios ao leitor de tela. As preferências persistem no navegador; a conversa não é armazenada no `localStorage`.
 
@@ -184,22 +184,24 @@ Use **Revisar texto** após parar para corrigir palavras reconhecidas incorretam
 
 A demonstração usa texto fictício identificado. Limpe o exemplo antes de iniciar uma conversa real. Não é necessário configurar a chave para experimentar a demonstração.
 
-Tab/Shift+Tab percorrem controles; Enter/Espaço ativam botões; setas alteram seleções e rolam a área de leitura; Escape fecha diálogos. Os anúncios de legendas são agrupados para evitar uma leitura a cada bloco de áudio e podem ser desativados. O comportamento com leitores de tela reais ainda precisa de avaliação manual.
+Tab/Shift+Tab percorrem controles; Enter/Espaço ativam botões; setas alteram seleções e rolam a área de leitura; Escape fecha diálogos. Os anúncios de legendas são agrupados para evitar uma leitura a cada bloco de áudio e podem ser desativados. A validação manual com NVDA e TalkBack foi concluída com aprovação pela equipe, incluindo navegação, identificação dos controles e leitura dos estados e das legendas.
 
-## Teste funcional e de acessibilidade
+## Validação funcional e de acessibilidade
+
+A versão final tem validação automatizada e manual concluída. Os resultados e o escopo estão em [Validação técnica](docs/VALIDACAO.md) e [Validação manual](docs/VALIDACAO_MANUAL.md). O procedimento abaixo permite reproduzir as verificações em outra instalação.
 
 1. Avise os participantes sobre o envio de áudio e obtenha concordância.
 2. Inicie e diga: “Olá, esta é uma conversa de teste. Vamos nos encontrar amanhã às dez horas.”
-3. Observe os trechos provisórios e confirmados; compare nomes, horários e números com o que foi falado.
+3. Observe o texto revisado e o resultado final; compare nomes, horários e números com o que foi falado. As hipóteses iniciais ficam ocultas.
 4. Pare durante uma frase. Confirme que o indicador do microfone desliga e que a última legenda chega ou que aparece uma mensagem de falha.
 5. Salve o `.txt` e abra-o para conferir os acentos. Inicie novamente: o texto anterior deve continuar na página.
 6. Teste limpar/cancelar e limpar/confirmar. Limpar não deve acontecer sem confirmação.
 7. Use apenas `Tab`, `Shift+Tab`, `Enter` e setas. Verifique foco visível, seleção do tamanho e acesso à área rolável.
 8. Use zoom de 200%, uma tela de 320–390 px e um celular real. Confira se os controles permanecem acessíveis e se não há rolagem horizontal.
-9. Teste com NVDA ou VoiceOver: estados e frases confirmadas devem ser anunciados, sem repetir cada alteração provisória.
+9. Teste com NVDA no Windows ou TalkBack no Android: estados e frases confirmadas devem ser anunciados, sem repetir cada alteração provisória.
 10. Negue o microfone e teste uma interrupção de rede. A interface deve explicar o problema sem apagar as frases confirmadas.
 
-A interface usa HTML semântico, nomes acessíveis, estados em texto, foco visível, controles grandes e contraste alto. Isso não representa certificação de conformidade WCAG nem substitui avaliação com usuários.
+A interface usa HTML semântico, nomes acessíveis, estados em texto, foco visível, controles grandes e contraste alto. A equipe aprovou os critérios de aceitação definidos para a interface, com referência à WCAG 2.2. A validação documenta o escopo avaliado e não constitui certificação externa de conformidade integral.
 
 ### Testes automatizados, sem consumir API
 
@@ -252,8 +254,9 @@ O processamento tem atraso variável, depende da conexão e do fornecedor e pode
 
 - [Requisitos e critérios de aceitação](docs/REQUISITOS.md).
 - [Arquitetura e fluxo de dados](docs/ARQUITETURA.md).
-- [Matriz de acessibilidade e verificação manual](docs/ACESSIBILIDADE.md).
+- [Matriz de acessibilidade e resultados](docs/ACESSIBILIDADE.md).
 - [Resultado da validação executada](docs/VALIDACAO.md).
+- [Registro da validação manual concluída](docs/VALIDACAO_MANUAL.md).
 
 ## Referências técnicas
 
